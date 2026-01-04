@@ -1,10 +1,20 @@
 import React, { useEffect, useRef } from 'react'
 import type { Options as ResizeOptions } from 'react-use-measure'
-import { Canvas as CanvasImpl, RenderProps } from '@react-three/fiber'
+import { Canvas as CanvasImpl } from '@react-three/fiber'
 import { EVENTS } from './events'
 
+type FiberCanvasProps = React.ComponentProps<typeof CanvasImpl>
+
+const DEFAULT_CANVAS_STYLE: React.CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: '100%',
+  overflow: 'hidden',
+  display: 'block',
+}
+
 export interface CanvasProps
-  extends Omit<RenderProps<HTMLCanvasElement>, 'size'>,
+  extends Omit<FiberCanvasProps, 'children' | 'size'>,
     React.HTMLAttributes<HTMLDivElement> {
   worker: Worker
   fallback?: React.ReactNode
@@ -27,6 +37,12 @@ export function Canvas({ eventSource, worker, fallback, style, className, id, ..
   const [shouldFallback, setFallback] = React.useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null!)
   const hasTransferredToOffscreen = useRef(false)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    Object.assign(canvas.style as any, DEFAULT_CANVAS_STYLE, style)
+  }, [style])
 
   useEffect(() => {
     if (!worker) return
@@ -142,7 +158,6 @@ export function Canvas({ eventSource, worker, fallback, style, className, id, ..
     <canvas
       id={id}
       className={className}
-      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'block', ...style }}
       ref={canvasRef}
     />
   )

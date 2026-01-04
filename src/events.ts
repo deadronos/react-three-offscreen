@@ -1,6 +1,8 @@
-import { UseBoundStore } from 'zustand'
 import { createEvents, RootState, EventManager, Events } from '@react-three/fiber'
 import { Emitter } from 'mitt'
+type StoreLike = {
+  getState: () => RootState
+}
 
 export const EVENTS = {
   onClick: ['click', false],
@@ -16,8 +18,8 @@ export const EVENTS = {
 } as const
 
 export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
-  return (store: UseBoundStore<RootState>): EventManager<HTMLElement> => {
-    const { handlePointer } = createEvents(store)
+  return (store: StoreLike): EventManager<HTMLElement> => {
+    const { handlePointer } = createEvents(store as any)
 
     return {
       priority: 1,
@@ -37,7 +39,7 @@ export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
       connect: (target) => {
         const { set, events } = store.getState()
         events.disconnect?.()
-        set((state) => ({ events: { ...state.events, connected: target } }))
+        set((state: RootState) => ({ events: { ...state.events, connected: target } }))
         Object.entries(events?.handlers ?? []).forEach(([name, event]) => {
           const [eventName] = EVENTS[name as keyof typeof EVENTS]
           emitter.on(eventName as any, event as any)
@@ -50,7 +52,7 @@ export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
             const [eventName] = EVENTS[name as keyof typeof EVENTS]
             emitter.off(eventName as any, event as any)
           })
-          set((state) => ({ events: { ...state.events, connected: undefined } }))
+          set((state: RootState) => ({ events: { ...state.events, connected: undefined } }))
         }
       },
     }
