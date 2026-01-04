@@ -9,13 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-three/drei": "^9.83.9",
-    "@react-three/fiber": "^8.12.2",
-    "@react-three/offscreen": "^0.0.5",
-    "@types/three": "^0.150.2",
-    "next": "13.3.1",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "three": "^0.151.3"
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@react-three/offscreen": "file:../..",
+    "@types/three": "^0.182.0",
+    "next": "^16.1.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "three": "^0.182.0"
   }
 }
