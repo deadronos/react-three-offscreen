@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import mitt from 'mitt'
 import { extend, createRoot, ReconcilerRoot, Dpr, Size } from '@react-three/fiber'
 import { createPointerEvents } from './events'
+import { WorkerDOM } from './WorkerDOM'
 
 export function render(children: React.ReactNode) {
   extend(THREE as any)
@@ -9,7 +9,7 @@ export function render(children: React.ReactNode) {
   let root: ReconcilerRoot<HTMLCanvasElement>
   let dpr: Dpr = [1, 2]
   let size: Size = { width: 0, height: 0, top: 0, left: 0 }
-  const emitter = mitt()
+  let dom: WorkerDOM
 
   const handleInit = (payload: any) => {
     const { props, drawingSurface: canvas, width, top, left, height, pixelRatio } = payload
@@ -19,35 +19,14 @@ export function render(children: React.ReactNode) {
         root.unmount()
       }
 
-      // Shim the canvas into a fake window/document
-      Object.assign(canvas, {
-        pageXOffset: left,
-        pageYOffset: top,
-        clientLeft: left,
-        clientTop: top,
-        clientWidth: width,
-        clientHeight: height,
-        style: { touchAction: 'none' },
-        ownerDocument: canvas,
-        documentElement: canvas,
-        getBoundingClientRect() {
-          return size
-        },
-        setAttribute() {},
-        setPointerCapture() {},
-        releasePointerCapture() {},
-        addEventListener(event: string, callback: () => void) {
-          emitter.on(event, callback)
-        },
-        removeEventListener(event: string, callback: () => void) {
-          emitter.off(event, callback)
-        },
-      })
+      dom = new WorkerDOM(canvas)
+      dom.update({ width, height, top, left })
+
       // Create react-three-fiber root
       root = createRoot(canvas)
       // Configure root
       root.configure({
-        events: createPointerEvents(emitter),
+        events: createPointerEvents(dom.emitter),
         size: (size = { width, height, top, left }),
         dpr: (dpr = Math.min(Math.max(1, pixelRatio), 2)),
         ...props,
@@ -70,18 +49,16 @@ export function render(children: React.ReactNode) {
     } catch (e: any) {
       postMessage({ type: 'error', payload: e?.message })
     }
-
-    // Shim window to the canvas from here on
-    self.window = canvas
   }
 
   const handleResize = ({ width, height, top, left }: Size) => {
     if (!root) return
+    dom.update({ width, height, top, left })
     root.configure({ size: (size = { width, height, top, left }), dpr })
   }
 
   const handleEvents = (payload: any) => {
-    emitter.emit(payload.eventName, { ...payload, preventDefault() {}, stopPropagation() {} })
+    dom.handleEvent(payload)
   }
 
   const handleProps = (payload: any) => {
@@ -133,19 +110,5 @@ export function render(children: React.ReactNode) {
       })
       .catch(onError)
     return {}
-  }
-
-  // Shims for web offscreen canvas
-  // @ts-ignore
-  self.window = {}
-  // @ts-ignore
-  self.document = {}
-  // @ts-ignore
-  self.Image = class {
-    height = 1
-    width = 1
-    set onload(callback: any) {
-      callback(true)
-    }
   }
 }
