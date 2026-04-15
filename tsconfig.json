@@ -7,6 +7,8 @@
     "strict": true,
     "preserveSymlinks": true,
     "moduleResolution": "Node",
+    "ignoreDeprecations": "6.0",
+    "rootDir": "src",
     "esModuleInterop": true,
     "declaration": true,
     "declarationDir": "dist",

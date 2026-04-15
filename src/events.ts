@@ -1,4 +1,4 @@
-import { UseBoundStore } from 'zustand'
+import { RootStore } from '@react-three/fiber'
 import { createEvents, RootState, EventManager, Events } from '@react-three/fiber'
 import { Emitter } from 'mitt'
 
@@ -16,7 +16,7 @@ export const EVENTS = {
 } as const
 
 export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
-  return (store: UseBoundStore<RootState>): EventManager<HTMLElement> => {
+  return (store: RootStore): EventManager<HTMLElement> => {
     const { handlePointer } = createEvents(store)
 
     return {
