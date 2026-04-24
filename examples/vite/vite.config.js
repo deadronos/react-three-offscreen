@@ -6,6 +6,6 @@ export default defineConfig({
   // https://stackoverflow.com/questions/73815639/how-to-use-jsx-in-a-web-worker-with-vite
   plugins: [react({ fastRefresh: false })],
   worker: {
-    plugins: [react({ fastRefresh: false })],
+    plugins: () => [react({ fastRefresh: false })],
   },
 })
