@@ -6,15 +6,14 @@
     "jsx": "react",
     "strict": true,
     "preserveSymlinks": true,
-    "moduleResolution": "Node",
-    "ignoreDeprecations": "6.0",
-    "rootDir": "src",
+    "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "declaration": true,
     "declarationDir": "dist",
     "skipLibCheck": true,
     "removeComments": false,
-    "baseUrl": "."
+    "ignoreDeprecations": "6.0",
+    "rootDir": "."
   },
   "include": ["src"]
 }

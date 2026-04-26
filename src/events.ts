@@ -1,6 +1,6 @@
-import { RootStore } from '@react-three/fiber'
-import { createEvents, RootState, EventManager, Events } from '@react-three/fiber'
-import { Emitter } from 'mitt'
+import type { DomEvent, RootState, EventManager, Events, RootStore } from '@react-three/fiber'
+import { createEvents } from '@react-three/fiber'
+import mitt, { Emitter } from 'mitt'
 
 export const EVENTS = {
   onClick: ['click', false],
@@ -15,32 +15,34 @@ export const EVENTS = {
   onLostPointerCapture: ['lostpointercapture', true],
 } as const
 
+// In r3f v9, createEvents receives the store directly
 export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
   return (store: RootStore): EventManager<HTMLElement> => {
-    const { handlePointer } = createEvents(store)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { handlePointer } = createEvents(store as any)
 
     return {
       priority: 1,
       enabled: true,
-      compute(event, state) {
-        // https://github.com/pmndrs/react-three-fiber/pull/782
-        // Events trigger outside of canvas when moved, use offsetX/Y by default and allow overrides
+      compute(event: any, state: RootState) {
         state.pointer.set((event.offsetX / state.size.width) * 2 - 1, -(event.offsetY / state.size.height) * 2 + 1)
         state.raycaster.setFromCamera(state.pointer, state.camera)
       },
 
       connected: undefined,
       handlers: Object.keys(EVENTS).reduce(
-        (acc, key) => ({ ...acc, [key]: handlePointer(key) }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (acc, key) => ({ ...acc, [key]: handlePointer(key as any) }),
         {}
       ) as unknown as Events,
-      connect: (target) => {
+      connect: (target: HTMLElement) => {
         const { set, events } = store.getState()
         events.disconnect?.()
         set((state) => ({ events: { ...state.events, connected: target } }))
         Object.entries(events?.handlers ?? []).forEach(([name, event]) => {
           const [eventName] = EVENTS[name as keyof typeof EVENTS]
-          emitter.on(eventName as any, event as any)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          emitter.emit(eventName as string, event as any)
         })
       },
       disconnect: () => {
@@ -48,7 +50,8 @@ export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
         if (events.connected) {
           Object.entries(events.handlers ?? []).forEach(([name, event]) => {
             const [eventName] = EVENTS[name as keyof typeof EVENTS]
-            emitter.off(eventName as any, event as any)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            emitter.off(eventName as string, event as any)
           })
           set((state) => ({ events: { ...state.events, connected: undefined } }))
         }

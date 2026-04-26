@@ -1,26 +1,30 @@
 import * as THREE from 'three'
 import mitt from 'mitt'
-import { extend, createRoot, ReconcilerRoot, Dpr, Size } from '@react-three/fiber'
-import { DomEvent } from '@react-three/fiber/dist/declarations/src/core/events'
+import { extend, createRoot } from '@react-three/fiber'
+import type { ReconcilerRoot } from '@react-three/fiber'
+import type { DomEvent } from '@react-three/fiber'
 import { createPointerEvents } from './events'
 
+interface Size { width: number; height: number; top: number; left: number }
+
 export function render(children: React.ReactNode) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   extend(THREE as any)
 
-  let root: ReconcilerRoot<HTMLCanvasElement>
-  let dpr: Dpr = [1, 2]
-  let size: Size = { width: 0, height: 0, top: 0, left: 0,  }
-  const emitter = mitt()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let root: ReconcilerRoot<any>
+  let dpr: [number, number] = [1, 2]
+  let size: Size = { width: 0, height: 0, top: 0, left: 0 }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const emitter = mitt<Record<string, any>>()
 
   const handleInit = (payload: any) => {
     const { props, drawingSurface: canvas, width, top, left, height, pixelRatio } = payload
     try {
-      // Unmount root if already mounted
       if (root) {
         root.unmount()
       }
 
-      // Shim the canvas into a fake window/document
       Object.assign(canvas, {
         pageXOffset: left,
         pageYOffset: top,
@@ -44,41 +48,39 @@ export function render(children: React.ReactNode) {
           emitter.off(event, callback)
         },
       })
-      // Create react-three-fiber root
-      root = createRoot(canvas)
-      // Configure root
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      root = createRoot(canvas as any)
       root.configure({
         events: createPointerEvents(emitter),
-        size: (size = { width, height, top, left,  }),
-        dpr: (dpr = Math.min(Math.max(1, pixelRatio), 2)),
+        size: (size = { width, height, top, left }),
+        dpr: (dpr = [Math.min(Math.max(1, pixelRatio), 2), 2]),
         ...props,
         onCreated: (state) => {
           if (props.eventPrefix) {
             state.setEvents({
-              compute: (event, state) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              compute: (event: DomEvent, st: any) => {
                 const x = event[(props.eventPrefix + 'X') as keyof DomEvent] as number
                 const y = event[(props.eventPrefix + 'Y') as keyof DomEvent] as number
-                state.pointer.set((x / state.size.width) * 2 - 1, -(y / state.size.height) * 2 + 1)
-                state.raycaster.setFromCamera(state.pointer, state.camera)
+                st.pointer.set((x / st.size.width) * 2 - 1, -(y / st.size.height) * 2 + 1)
+                st.raycaster.setFromCamera(st.pointer, st.camera)
               },
             })
           }
         },
       })
 
-      // Render children once
       root.render(children)
     } catch (e: any) {
       postMessage({ type: 'error', payload: e?.message })
     }
 
-    // Shim window to the canvas from here on
     self.window = canvas
   }
 
   const handleResize = ({ width, height, top, left }: Size) => {
     if (!root) return
-    root.configure({ size: (size = { width, height, top, left,  }), dpr })
+    root.configure({ size: (size = { width, height, top, left }), dpr })
   }
 
   const handleEvents = (payload: any) => {
