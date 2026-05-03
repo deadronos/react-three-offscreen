@@ -1,6 +1,6 @@
-import type { DomEvent, RootState, EventManager, Events } from '@react-three/fiber'
+import type { DomEvent, RootState, EventManager, Events, RootStore } from '@react-three/fiber'
 import { createEvents } from '@react-three/fiber'
-import mitt from 'mitt'
+import mitt, { Emitter } from 'mitt'
 
 export const EVENTS = {
   onClick: ['click', false],
@@ -16,15 +16,15 @@ export const EVENTS = {
 } as const
 
 // In r3f v9, createEvents receives the store directly
-export function createPointerEvents(emitter: ReturnType<typeof mitt>) {
-  return (store: { getState(): RootState; subscribe(callback: (state: RootState) => void): () => void }) => {
+export function createPointerEvents(emitter: Emitter<Record<any, unknown>>) {
+  return (store: RootStore): EventManager<HTMLElement> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { handlePointer } = createEvents(store as any)
 
     return {
       priority: 1,
       enabled: true,
-      compute(event: DomEvent, state: RootState) {
+      compute(event: any, state: RootState) {
         state.pointer.set((event.offsetX / state.size.width) * 2 - 1, -(event.offsetY / state.size.height) * 2 + 1)
         state.raycaster.setFromCamera(state.pointer, state.camera)
       },

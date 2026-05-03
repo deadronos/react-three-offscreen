@@ -7,13 +7,11 @@
     "strict": true,
     "preserveSymlinks": true,
     "moduleResolution": "Bundler",
-    "esModuleInterop": true,
     "declaration": true,
     "declarationDir": "dist",
     "skipLibCheck": true,
     "removeComments": false,
-    "ignoreDeprecations": "6.0",
-    "rootDir": "."
+    "rootDir": "src"
   },
   "include": ["src"]
 }
